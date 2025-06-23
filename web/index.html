@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Notes Extractor - Web Edition</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-microphone"></i> Audio Notes Extractor</h1>
+                <p class="subtitle">Transform your conversations into structured notes</p>
+                <div id="serverStatus" class="server-status">
+                    <span class="status-indicator" id="statusDot"></span>
+                    <span id="statusText">Checking connection...</span>
+                </div>
+            </div>
+            <div class="header-controls">
+                <button id="settingsBtn" class="btn btn-secondary">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel - Controls -->
+            <div class="left-panel">
+                <!-- Recording Controls -->
+                <div class="card">
+                    <h3><i class="fas fa-record-vinyl"></i> Recording</h3>
+                    
+                    <!-- Context Selection -->
+                    <div class="form-group">
+                        <label for="contextSelect">Context Type:</label>
+                        <select id="contextSelect" class="form-control">
+                            <option value="general">General Conversation</option>
+                            <option value="meeting">Business Meeting</option>
+                            <option value="interview">Interview</option>
+                            <option value="lecture">Lecture/Presentation</option>
+                        </select>
+                    </div>
+
+                    <!-- Timer Display -->
+                    <div class="timer-display">
+                        <div id="timer">00:00</div>
+                        <div id="status" class="status">Ready to record</div>
+                    </div>
+
+                    <!-- Record Button -->
+                    <button id="recordBtn" class="btn btn-primary btn-large">
+                        <i class="fas fa-microphone"></i>
+                        <span>Start Recording</span>
+                    </button>
+
+                    <!-- Processing Options -->
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="autoExtract" checked>
+                            Auto-extract notes after transcription
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="autoCopy" checked>
+                            Auto-copy transcription to clipboard
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                    <button id="extractBtn" class="btn btn-accent" disabled>
+                        <i class="fas fa-magic"></i> Extract Notes
+                    </button>
+                    <button id="clearBtn" class="btn btn-secondary">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                    <button id="exportBtn" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+
+                <!-- History -->
+                <div class="card">
+                    <h3><i class="fas fa-history"></i> Recent Sessions</h3>
+                    <div id="historyList" class="history-list">
+                        <div class="history-empty">No recent sessions</div>
+                    </div>
+                    <button id="clearHistoryBtn" class="btn btn-sm btn-secondary">
+                        Clear History
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel - Content -->
+            <div class="right-panel">
+                <!-- Tab Navigation -->
+                <div class="tab-nav">
+                    <button class="tab-btn active" data-tab="transcription">
+                        <i class="fas fa-file-text"></i> Transcription
+                    </button>
+                    <button class="tab-btn" data-tab="notes">
+                        <i class="fas fa-sticky-note"></i> Notes
+                    </button>
+                </div>
+
+                <!-- Transcription Tab -->
+                <div id="transcriptionTab" class="tab-content active">
+                    <div class="content-header">
+                        <h3>Transcription</h3>
+                        <div class="content-actions">
+                            <button id="copyTranscriptionBtn" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button id="saveTranscriptionBtn" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="transcriptionText" 
+                              class="content-textarea" 
+                              placeholder="Your transcription will appear here..."
+                              readonly></textarea>
+                </div>
+
+                <!-- Notes Tab -->
+                <div id="notesTab" class="tab-content">
+                    <div class="content-header">
+                        <h3>Extracted Notes</h3>
+                        <div class="content-actions">
+                            <button id="copyNotesBtn" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-copy"></i> Copy
+                            </button>
+                            <button id="saveNotesBtn" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-save"></i> Save
+                            </button>
+                        </div>
+                    </div>
+                    <div id="notesContent" class="notes-content">
+                        <div class="notes-placeholder">
+                            <i class="fas fa-lightbulb"></i>
+                            <p>Extracted notes will appear here after transcription</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Progress Overlay -->
+        <div id="progressOverlay" class="progress-overlay hidden">
+            <div class="progress-content">
+                <div class="spinner"></div>
+                <h3 id="progressTitle">Processing...</h3>
+                <p id="progressMessage">Please wait while we process your audio</p>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Settings</h3>
+                    <button id="closeSettingsBtn" class="btn-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- API Settings -->
+                    <div class="form-group">
+                        <h4>AI Processing (Optional)</h4>
+                        <label for="apiKeyInput">OpenAI API Key:</label>
+                        <input type="password" id="apiKeyInput" class="form-control" 
+                               placeholder="sk-...">
+                        <small class="form-help">
+                            Leave empty to use rule-based extraction only. 
+                            Your API key is stored locally and never sent to our servers.
+                        </small>
+                    </div>
+
+                    <!-- Processing Settings -->
+                    <div class="form-group">
+                        <h4>Processing</h4>
+                        <label for="whisperModel">Whisper Model:</label>
+                        <select id="whisperModel" class="form-control">
+                            <option value="tiny">Tiny (fastest, least accurate)</option>
+                            <option value="base" selected>Base (good balance)</option>
+                            <option value="small">Small (better accuracy)</option>
+                        </select>
+                        <small class="form-help">
+                            Larger models provide better accuracy but take longer to load and process.
+                        </small>
+                    </div>
+
+                    <!-- Audio Settings -->
+                    <div class="form-group">
+                        <h4>Audio</h4>
+                        <label>
+                            <input type="checkbox" id="noiseReduction" checked>
+                            Enable noise reduction
+                        </label>
+                        <label>
+                            <input type="checkbox" id="autoGain" checked>
+                            Auto-adjust volume
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
+                    <button id="cancelSettingsBtn" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <h2>Loading Audio Notes Extractor</h2>
+                <p id="loadingMessage">Initializing application...</p>
+                <div class="loading-progress">
+                    <div id="loadingProgressFill" class="loading-progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/audio-recorder.js"></script>
+    <script src="js/note-extractor.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
